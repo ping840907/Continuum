@@ -39,13 +39,26 @@ static PropertyAnimation *s_month_anim = NULL;
 static PropertyAnimation *s_day_anim = NULL;
 static PropertyAnimation *s_weekday_anim = NULL;
 
+typedef struct {
+  int32_t from;
+  int32_t to;
+  int32_t *target_var;
+} AnimCtx;
+
 static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
-  PropertyAnimation **anim_ptr = (PropertyAnimation **)context;
-  *anim_ptr = NULL;
+  void **ptr_tuple = (void **)context;
+  PropertyAnimation **anim_ptr = (PropertyAnimation **)ptr_tuple[0];
+  AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
+
+  if (anim_ptr && *anim_ptr == (PropertyAnimation *)animation) {
+    *anim_ptr = NULL;
+  }
+  free(ctx);
+  free(ptr_tuple);
+  animation_destroy(animation);
 }
 
-
-static int16_t anim_month_y = 24; // Starts below the box
+static int16_t anim_month_y = 24;
 static int16_t anim_day_y = 24;
 static int16_t anim_weekday_y = 24;
 
@@ -53,50 +66,43 @@ static int32_t target_hour_angle = 0;
 static int32_t target_min_tens_angle = 0;
 static int32_t target_min_ones_angle = 0;
 
-// Custom animation setters
-static void anim_hour_setter(void *subject, int32_t int32) {
-  anim_hour_angle = int32;
-  layer_mark_dirty(s_canvas_layer);
-}
-static void anim_min_tens_setter(void *subject, int32_t int32) {
-  anim_min_tens_angle = int32;
-  layer_mark_dirty(s_canvas_layer);
-}
-static void anim_min_ones_setter(void *subject, int32_t int32) {
-  anim_min_ones_angle = int32;
+static void angle_anim_update(Animation *anim, const AnimationProgress progress) {
+  void **ptr_tuple = (void **)animation_get_context(anim);
+  AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
+  int32_t current = ctx->from + ((ctx->to - ctx->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX;
+  *ctx->target_var = current;
   layer_mark_dirty(s_canvas_layer);
 }
 
-static const PropertyAnimationImplementation hour_anim_impl = { .base = { .update = (AnimationUpdateImplementation)anim_hour_setter } };
-static const PropertyAnimationImplementation min_tens_anim_impl = { .base = { .update = (AnimationUpdateImplementation)anim_min_tens_setter } };
-static const PropertyAnimationImplementation min_ones_anim_impl = { .base = { .update = (AnimationUpdateImplementation)anim_min_ones_setter } };
-
-static void anim_month_setter(void *subject, int16_t int16) {
-  anim_month_y = int16;
-  layer_mark_dirty(s_month_layer);
-}
-static void anim_day_setter(void *subject, int16_t int16) {
-  anim_day_y = int16;
-  layer_mark_dirty(s_day_layer);
-}
-static void anim_weekday_setter(void *subject, int16_t int16) {
-  anim_weekday_y = int16;
-  layer_mark_dirty(s_weekday_layer);
+static void date_anim_update(Animation *anim, const AnimationProgress progress) {
+  void **ptr_tuple = (void **)animation_get_context(anim);
+  AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
+  int32_t current = ctx->from + ((ctx->to - ctx->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX;
+  *ctx->target_var = current;
+  if (ctx->target_var == (int32_t*)&anim_month_y) layer_mark_dirty(s_month_layer);
+  else if (ctx->target_var == (int32_t*)&anim_day_y) layer_mark_dirty(s_day_layer);
+  else if (ctx->target_var == (int32_t*)&anim_weekday_y) layer_mark_dirty(s_weekday_layer);
 }
 
-static void anim_month_setter_wrapper(void *subject, int32_t val) {
-  anim_month_setter(subject, (int16_t)val);
-}
-static void anim_day_setter_wrapper(void *subject, int32_t val) {
-  anim_day_setter(subject, (int16_t)val);
-}
-static void anim_weekday_setter_wrapper(void *subject, int32_t val) {
-  anim_weekday_setter(subject, (int16_t)val);
-}
+static const AnimationImplementation angle_anim_impl = { .update = angle_anim_update };
+static const AnimationImplementation date_anim_impl = { .update = date_anim_update };
 
-static const PropertyAnimationImplementation month_anim_impl = { .base = { .update = (AnimationUpdateImplementation)(void*)anim_month_setter_wrapper } };
-static const PropertyAnimationImplementation day_anim_impl = { .base = { .update = (AnimationUpdateImplementation)(void*)anim_day_setter_wrapper } };
-static const PropertyAnimationImplementation weekday_anim_impl = { .base = { .update = (AnimationUpdateImplementation)(void*)anim_weekday_setter_wrapper } };
+static PropertyAnimation* create_anim(const AnimationImplementation *impl, int32_t from, int32_t to, int32_t *target, PropertyAnimation **ptr_to_store) {
+  AnimCtx *ctx = malloc(sizeof(AnimCtx));
+  ctx->from = from;
+  ctx->to = to;
+  ctx->target_var = target;
+
+  Animation *anim = animation_create();
+  animation_set_implementation(anim, impl);
+
+  void **ptr_tuple = malloc(sizeof(void*) * 2);
+  ptr_tuple[0] = ptr_to_store;
+  ptr_tuple[1] = ctx;
+
+  animation_set_handlers(anim, (AnimationHandlers) { .stopped = anim_stopped_handler }, ptr_tuple);
+  return (PropertyAnimation*)anim;
+}
 
 // Font
 static GFont s_time_font;
@@ -123,18 +129,6 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
 
   int str_h = w - 2*r; // horizontal straight segment
   int str_v = h - 2*r; // vertical straight segment
-
-  int32_t sine = sin_lookup(angle);
-  int32_t cosine = cos_lookup(angle);
-
-  int max_dist = 1000;
-  int dx __attribute__((unused)) = (sine * max_dist) / TRIG_MAX_RATIO;
-  int dy __attribute__((unused)) = (-cosine * max_dist) / TRIG_MAX_RATIO;
-
-  int min_t __attribute__((unused)) = 0;
-  int max_t __attribute__((unused)) = TRIG_MAX_RATIO;
-  int current_t __attribute__((unused));
-  int px __attribute__((unused)) = 0, py __attribute__((unused)) = 0;
 
   int approx_perimeter = 2 * str_h + 2 * str_v + (314 * 2 * r) / 100;
 
@@ -263,6 +257,15 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
   for(int i=0; i<rings[0].num_items; i++) {
     int num = i + 1; // 1 to 12
+    if (clock_is_24h_style()) {
+      time_t temp = time(NULL);
+      struct tm *tick_time = localtime(&temp);
+      if (tick_time->tm_hour >= 12) {
+        // PM sequence: 13, 14, ..., 23, 0
+        num = i + 13;
+        if (num >= 24) num -= 24;
+      }
+    }
     int32_t base_angle = anim_hour_angle;
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[0].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
@@ -296,12 +299,17 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
   // Draw Center Text (HH:MM)
   char time_buf[6];
-  snprintf(time_buf, sizeof(time_buf), "%02d:%02d", current_hour, current_minute_tens*10 + current_minute_ones);
+  int display_hour = current_hour;
+  if (!clock_is_24h_style()) {
+    if(display_hour == 0) display_hour = 12;
+    if(display_hour > 12) display_hour -= 12;
+  }
+  snprintf(time_buf, sizeof(time_buf), clock_is_24h_style() ? "%02d:%02d" : "%d:%02d", display_hour, current_minute_tens*10 + current_minute_ones);
   graphics_context_set_text_color(ctx, config.center_text_color);
   graphics_draw_text(ctx, time_buf, s_time_font, GRect(center.x - 40, center.y - 20, 80, 40), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // Draw Date Section (Month, Day, Weekday)
-  int date_y = center.y + 110;
+  int date_y = center.y + 75;
   int box_w = 30;
   int box_h = 24;
   int gap = 10;
@@ -312,18 +320,22 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_color(ctx, config.line_color);
 
   for(int i=0; i<3; i++) {
-    GRect box __attribute__((unused)) = GRect(start_x + i * (box_w + gap), date_y, box_w, box_h);
-    graphics_draw_rect(ctx, box);
+    graphics_draw_rect(ctx, GRect(start_x + i * (box_w + gap), date_y, box_w, box_h));
   }
 
   // Draw Battery
-  int batt_y = date_y + box_h + 10;
+  int batt_y = date_y + box_h + 6;
   GRect batt_rect = GRect(center.x - 15, batt_y, 30, 14);
   graphics_draw_rect(ctx, batt_rect);
   graphics_draw_rect(ctx, GRect(center.x + 15, batt_y + 3, 3, 8));
 
   // Battery Fill & Text
   int fill_w = (26 * battery_level) / 100;
+  if (battery_level <= 20) {
+    graphics_context_set_fill_color(ctx, GColorRed);
+  } else {
+    graphics_context_set_fill_color(ctx, config.line_color);
+  }
   graphics_fill_rect(ctx, GRect(center.x - 13, batt_y + 2, fill_w, 10), 0, GCornerNone);
 
   char batt_buf[8];
@@ -365,15 +377,41 @@ static void update_time() {
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
+  int hour = tick_time->tm_hour;
+  if (clock_is_24h_style()) {
+    int h_idx;
+    if (hour >= 12) {
+       // 12PM is index 11 (number 0), 13PM is index 0 (number 13)
+       if (hour == 12) h_idx = 11;
+       else h_idx = hour - 13;
+    } else {
+       // 0AM is index 11 (number 0), 1AM is index 0 (number 1)
+       if (hour == 0) h_idx = 11;
+       else h_idx = hour - 1;
+    }
+    target_hour_angle = (h_idx * TRIG_MAX_ANGLE) / rings[0].num_items;
+  }
+
+  // Normalize current angles to [0, TRIG_MAX_ANGLE) to ensure forward animation
+  anim_hour_angle %= TRIG_MAX_ANGLE;
+  if (anim_hour_angle < 0) anim_hour_angle += TRIG_MAX_ANGLE;
+  anim_min_tens_angle %= TRIG_MAX_ANGLE;
+  if (anim_min_tens_angle < 0) anim_min_tens_angle += TRIG_MAX_ANGLE;
+  anim_min_ones_angle %= TRIG_MAX_ANGLE;
+  if (anim_min_ones_angle < 0) anim_min_ones_angle += TRIG_MAX_ANGLE;
+
   current_hour = tick_time->tm_hour;
-  if(current_hour == 0) current_hour = 12;
-  if(current_hour > 12) current_hour -= 12;
 
   int min = tick_time->tm_min;
   current_minute_tens = min / 10;
   current_minute_ones = min % 10;
 
-  target_hour_angle = ((current_hour - 1) * TRIG_MAX_ANGLE) / rings[0].num_items;
+  if (!clock_is_24h_style()) {
+    int h = current_hour;
+    if(h == 0) h = 12;
+    if(h > 12) h -= 12;
+    target_hour_angle = ((h - 1) * TRIG_MAX_ANGLE) / rings[0].num_items;
+  }
   target_min_tens_angle = (current_minute_tens * TRIG_MAX_ANGLE) / rings[1].num_items;
   target_min_ones_angle = (current_minute_ones * TRIG_MAX_ANGLE) / rings[2].num_items;
 
@@ -390,94 +428,64 @@ static void update_time() {
   prev_weekday = current_weekday;
 
   if (config.animation_toggle) {
-    if(target_min_ones_angle < anim_min_ones_angle && current_minute_ones == 0) {
+    if(target_min_ones_angle < anim_min_ones_angle) {
       target_min_ones_angle += TRIG_MAX_ANGLE;
     }
-    if(target_min_tens_angle < anim_min_tens_angle && current_minute_tens == 0) {
+    if(target_min_tens_angle < anim_min_tens_angle) {
       target_min_tens_angle += TRIG_MAX_ANGLE;
     }
-    if(target_hour_angle < anim_hour_angle && current_hour == 1) {
+    if(target_hour_angle < anim_hour_angle) {
       target_hour_angle += TRIG_MAX_ANGLE;
     }
 
     if(s_hour_anim) animation_unschedule((Animation*)s_hour_anim);
-    s_hour_anim = property_animation_create(&hour_anim_impl, NULL, NULL, NULL);
-    property_animation_from(s_hour_anim, &anim_hour_angle, sizeof(int32_t), true);
-    property_animation_to(s_hour_anim, &target_hour_angle, sizeof(int32_t), true);
+    s_hour_anim = create_anim(&angle_anim_impl, anim_hour_angle, target_hour_angle, &anim_hour_angle, &s_hour_anim);
     animation_set_duration((Animation*)s_hour_anim, 500);
     animation_set_curve((Animation*)s_hour_anim, AnimationCurveEaseInOut);
-    animation_set_handlers((Animation*)s_hour_anim, (AnimationHandlers) {
-      .stopped = anim_stopped_handler
-    }, &s_hour_anim);
     animation_schedule((Animation*)s_hour_anim);
 
     if(s_min_tens_anim) animation_unschedule((Animation*)s_min_tens_anim);
-    s_min_tens_anim = property_animation_create(&min_tens_anim_impl, NULL, NULL, NULL);
-    property_animation_from(s_min_tens_anim, &anim_min_tens_angle, sizeof(int32_t), true);
-    property_animation_to(s_min_tens_anim, &target_min_tens_angle, sizeof(int32_t), true);
+    s_min_tens_anim = create_anim(&angle_anim_impl, anim_min_tens_angle, target_min_tens_angle, &anim_min_tens_angle, &s_min_tens_anim);
     animation_set_duration((Animation*)s_min_tens_anim, 500);
     animation_set_delay((Animation*)s_min_tens_anim, 200);
     animation_set_curve((Animation*)s_min_tens_anim, AnimationCurveEaseInOut);
-    animation_set_handlers((Animation*)s_min_tens_anim, (AnimationHandlers) {
-      .stopped = anim_stopped_handler
-    }, &s_min_tens_anim);
     animation_schedule((Animation*)s_min_tens_anim);
 
     if(s_min_ones_anim) animation_unschedule((Animation*)s_min_ones_anim);
-    s_min_ones_anim = property_animation_create(&min_ones_anim_impl, NULL, NULL, NULL);
-    property_animation_from(s_min_ones_anim, &anim_min_ones_angle, sizeof(int32_t), true);
-    property_animation_to(s_min_ones_anim, &target_min_ones_angle, sizeof(int32_t), true);
+    s_min_ones_anim = create_anim(&angle_anim_impl, anim_min_ones_angle, target_min_ones_angle, &anim_min_ones_angle, &s_min_ones_anim);
     animation_set_duration((Animation*)s_min_ones_anim, 500);
     animation_set_delay((Animation*)s_min_ones_anim, 400);
     animation_set_curve((Animation*)s_min_ones_anim, AnimationCurveEaseInOut);
-    animation_set_handlers((Animation*)s_min_ones_anim, (AnimationHandlers) {
-      .stopped = anim_stopped_handler
-    }, &s_min_ones_anim);
     animation_schedule((Animation*)s_min_ones_anim);
 
-    int16_t target_y = 2;
+    int32_t target_y = 2;
 
     if (month_changed) {
       if(s_month_anim) animation_unschedule((Animation*)s_month_anim);
       anim_month_y = 24;
-      s_month_anim = property_animation_create(&month_anim_impl, NULL, NULL, NULL);
-      property_animation_from(s_month_anim, &anim_month_y, sizeof(int16_t), true);
-      property_animation_to(s_month_anim, &target_y, sizeof(int16_t), true);
+      s_month_anim = create_anim(&date_anim_impl, (int32_t)anim_month_y, target_y, (int32_t*)&anim_month_y, &s_month_anim);
       animation_set_duration((Animation*)s_month_anim, 400);
       animation_set_curve((Animation*)s_month_anim, AnimationCurveEaseOut);
-      animation_set_handlers((Animation*)s_month_anim, (AnimationHandlers) {
-        .stopped = anim_stopped_handler
-      }, &s_month_anim);
       animation_schedule((Animation*)s_month_anim);
     }
 
     if (day_changed) {
       if(s_day_anim) animation_unschedule((Animation*)s_day_anim);
       anim_day_y = 24;
-      s_day_anim = property_animation_create(&day_anim_impl, NULL, NULL, NULL);
-      property_animation_from(s_day_anim, &anim_day_y, sizeof(int16_t), true);
-      property_animation_to(s_day_anim, &target_y, sizeof(int16_t), true);
+      s_day_anim = create_anim(&date_anim_impl, (int32_t)anim_day_y, target_y, (int32_t*)&anim_day_y, &s_day_anim);
       animation_set_duration((Animation*)s_day_anim, 400);
       animation_set_delay((Animation*)s_day_anim, 200);
       animation_set_curve((Animation*)s_day_anim, AnimationCurveEaseOut);
-      animation_set_handlers((Animation*)s_day_anim, (AnimationHandlers) {
-        .stopped = anim_stopped_handler
-      }, &s_day_anim);
       animation_schedule((Animation*)s_day_anim);
     }
 
     if (weekday_changed) {
       if(s_weekday_anim) animation_unschedule((Animation*)s_weekday_anim);
       anim_weekday_y = 24;
-      s_weekday_anim = property_animation_create(&weekday_anim_impl, NULL, NULL, NULL);
-      property_animation_from(s_weekday_anim, &anim_weekday_y, sizeof(int16_t), true);
-      property_animation_to(s_weekday_anim, &target_y, sizeof(int16_t), true);
+      s_weekday_anim = create_anim(&date_anim_impl, (int32_t)anim_weekday_y, target_y, (int32_t*)&anim_weekday_y, &s_weekday_anim);
       animation_set_duration((Animation*)s_weekday_anim, 400);
       animation_set_delay((Animation*)s_weekday_anim, 400);
       animation_set_curve((Animation*)s_weekday_anim, AnimationCurveEaseOut);
-      animation_set_handlers((Animation*)s_weekday_anim, (AnimationHandlers) {
-        .stopped = anim_stopped_handler
-      }, &s_weekday_anim);
       animation_schedule((Animation*)s_weekday_anim);
     }
 
@@ -505,11 +513,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   current_day = tick_time->tm_mday;
   current_weekday = tick_time->tm_wday;
 
-  // Set initial anim angles to match start load state (Top Position = 0)
-  anim_hour_angle = 0;
-  anim_min_tens_angle = 0;
-  anim_min_ones_angle = 0;
-
   update_time();
 }
 
@@ -528,9 +531,13 @@ static void day_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void weekday_update_proc(Layer *layer, GContext *ctx) {
-  const char* weekdays[] = {"sun", "mon", "tue", "wed", "thu", "fri", "sat"};
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+  char buf[8];
+  strftime(buf, sizeof(buf), "%a", tick_time);
+  // Strftime might return capitalized "Sun", "Mon"... we keep it for consistency with system localization
   graphics_context_set_text_color(ctx, config.line_color);
-  graphics_draw_text(ctx, weekdays[current_weekday], s_date_font, GRect(0, anim_weekday_y, 30, 24), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, buf, s_date_font, GRect(0, anim_weekday_y, 30, 24), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void main_window_load(Window *window) {
@@ -543,7 +550,7 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
 
-  int date_y = center.y + 110;
+  int date_y = center.y + 75;
   int box_w = 30;
   int box_h = 24;
   int gap = 10;
@@ -574,10 +581,23 @@ static void main_window_load(Window *window) {
   current_month = tick_time->tm_mon + 1;
   current_day = tick_time->tm_mday;
   current_weekday = tick_time->tm_wday;
+
+  // Set initial anim angles to 0 for the first animation on load
+  anim_hour_angle = 0;
+  anim_min_tens_angle = 0;
+  anim_min_ones_angle = 0;
+
   update_time();
 }
 
 static void main_window_unload(Window *window) {
+  if(s_hour_anim) animation_unschedule((Animation*)s_hour_anim);
+  if(s_min_tens_anim) animation_unschedule((Animation*)s_min_tens_anim);
+  if(s_min_ones_anim) animation_unschedule((Animation*)s_min_ones_anim);
+  if(s_month_anim) animation_unschedule((Animation*)s_month_anim);
+  if(s_day_anim) animation_unschedule((Animation*)s_day_anim);
+  if(s_weekday_anim) animation_unschedule((Animation*)s_weekday_anim);
+
   layer_destroy(s_month_layer);
   layer_destroy(s_day_layer);
   layer_destroy(s_weekday_layer);
@@ -585,11 +605,12 @@ static void main_window_unload(Window *window) {
 }
 
 static void init() {
+  setlocale(LC_ALL, "");
   init_default_config();
 
   app_message_register_inbox_received(inbox_received_callback);
-  const int inbox_size = 128;
-  const int outbox_size = 128;
+  const int inbox_size = 512;
+  const int outbox_size = 512;
   app_message_open(inbox_size, outbox_size);
 
   s_main_window = window_create();
