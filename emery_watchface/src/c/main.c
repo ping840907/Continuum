@@ -617,6 +617,7 @@ static void main_window_load(Window *window) {
   struct tm *tick_time = localtime(&temp);
   current_month = tick_time->tm_mon + 1;
   current_day = tick_time->tm_mday;
+  snprintf(s_day_buffer, sizeof(s_day_buffer), "%d", current_day);
   current_weekday = tick_time->tm_wday;
 
   // Set initial anim angles to 0 for the first animation on load
