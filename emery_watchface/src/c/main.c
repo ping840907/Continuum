@@ -429,32 +429,40 @@ static void update_time() {
       target_hour_tens_angle += TRIG_MAX_ANGLE;
     }
 
-    if(s_hour_tens_anim) animation_unschedule((Animation*)s_hour_tens_anim);
-    s_hour_tens_anim = create_anim(&angle_anim_impl, anim_hour_tens_angle, target_hour_tens_angle, &anim_hour_tens_angle, &s_hour_tens_anim);
-    animation_set_duration((Animation*)s_hour_tens_anim, 500);
-    animation_set_curve((Animation*)s_hour_tens_anim, AnimationCurveEaseInOut);
-    animation_schedule((Animation*)s_hour_tens_anim);
+    if (target_hour_tens_angle != anim_hour_tens_angle) {
+      if(s_hour_tens_anim) animation_unschedule((Animation*)s_hour_tens_anim);
+      s_hour_tens_anim = create_anim(&angle_anim_impl, anim_hour_tens_angle, target_hour_tens_angle, &anim_hour_tens_angle, &s_hour_tens_anim);
+      animation_set_duration((Animation*)s_hour_tens_anim, 500);
+      animation_set_curve((Animation*)s_hour_tens_anim, AnimationCurveEaseInOut);
+      animation_schedule((Animation*)s_hour_tens_anim);
+    }
 
-    if(s_hour_ones_anim) animation_unschedule((Animation*)s_hour_ones_anim);
-    s_hour_ones_anim = create_anim(&angle_anim_impl, anim_hour_ones_angle, target_hour_ones_angle, &anim_hour_ones_angle, &s_hour_ones_anim);
-    animation_set_duration((Animation*)s_hour_ones_anim, 500);
-    animation_set_delay((Animation*)s_hour_ones_anim, 150);
-    animation_set_curve((Animation*)s_hour_ones_anim, AnimationCurveEaseInOut);
-    animation_schedule((Animation*)s_hour_ones_anim);
+    if (target_hour_ones_angle != anim_hour_ones_angle) {
+      if(s_hour_ones_anim) animation_unschedule((Animation*)s_hour_ones_anim);
+      s_hour_ones_anim = create_anim(&angle_anim_impl, anim_hour_ones_angle, target_hour_ones_angle, &anim_hour_ones_angle, &s_hour_ones_anim);
+      animation_set_duration((Animation*)s_hour_ones_anim, 500);
+      animation_set_delay((Animation*)s_hour_ones_anim, 150);
+      animation_set_curve((Animation*)s_hour_ones_anim, AnimationCurveEaseInOut);
+      animation_schedule((Animation*)s_hour_ones_anim);
+    }
 
-    if(s_min_tens_anim) animation_unschedule((Animation*)s_min_tens_anim);
-    s_min_tens_anim = create_anim(&angle_anim_impl, anim_min_tens_angle, target_min_tens_angle, &anim_min_tens_angle, &s_min_tens_anim);
-    animation_set_duration((Animation*)s_min_tens_anim, 500);
-    animation_set_delay((Animation*)s_min_tens_anim, 300);
-    animation_set_curve((Animation*)s_min_tens_anim, AnimationCurveEaseInOut);
-    animation_schedule((Animation*)s_min_tens_anim);
+    if (target_min_tens_angle != anim_min_tens_angle) {
+      if(s_min_tens_anim) animation_unschedule((Animation*)s_min_tens_anim);
+      s_min_tens_anim = create_anim(&angle_anim_impl, anim_min_tens_angle, target_min_tens_angle, &anim_min_tens_angle, &s_min_tens_anim);
+      animation_set_duration((Animation*)s_min_tens_anim, 500);
+      animation_set_delay((Animation*)s_min_tens_anim, 300);
+      animation_set_curve((Animation*)s_min_tens_anim, AnimationCurveEaseInOut);
+      animation_schedule((Animation*)s_min_tens_anim);
+    }
 
-    if(s_min_ones_anim) animation_unschedule((Animation*)s_min_ones_anim);
-    s_min_ones_anim = create_anim(&angle_anim_impl, anim_min_ones_angle, target_min_ones_angle, &anim_min_ones_angle, &s_min_ones_anim);
-    animation_set_duration((Animation*)s_min_ones_anim, 500);
-    animation_set_delay((Animation*)s_min_ones_anim, 450);
-    animation_set_curve((Animation*)s_min_ones_anim, AnimationCurveEaseInOut);
-    animation_schedule((Animation*)s_min_ones_anim);
+    if (target_min_ones_angle != anim_min_ones_angle) {
+      if(s_min_ones_anim) animation_unschedule((Animation*)s_min_ones_anim);
+      s_min_ones_anim = create_anim(&angle_anim_impl, anim_min_ones_angle, target_min_ones_angle, &anim_min_ones_angle, &s_min_ones_anim);
+      animation_set_duration((Animation*)s_min_ones_anim, 500);
+      animation_set_delay((Animation*)s_min_ones_anim, 450);
+      animation_set_curve((Animation*)s_min_ones_anim, AnimationCurveEaseInOut);
+      animation_schedule((Animation*)s_min_ones_anim);
+    }
 
     int32_t target_y = 3;
 
