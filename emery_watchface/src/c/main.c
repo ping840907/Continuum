@@ -145,7 +145,7 @@ void init_default_config() {
   config.outer_ring_color = GColorBlack;
   config.highlight_fill_color = GColorRed;
   config.line_color = GColorDarkGray;
-  config.number_color = GColorWhite;
+  config.number_color = GColorLightGray;
   config.center_text_color = GColorWhite;
   config.highlight_number_color = GColorWhite;
   config.highlight_position = POS_RIGHT;
@@ -289,7 +289,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[0].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
-    graphics_context_set_text_color(ctx, (s_hour_tens_anim == NULL && i == current_hour_tens) ? config.highlight_number_color : GColorLightGray);
+    graphics_context_set_text_color(ctx, (s_hour_tens_anim == NULL && i == current_hour_tens) ? config.highlight_number_color : config.number_color);
 
     GPoint pt = get_point_on_rounded_rect(rings[0].width, rings[0].height, rings[0].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", i);
@@ -302,7 +302,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[1].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
-    graphics_context_set_text_color(ctx, (s_hour_ones_anim == NULL && i == current_hour_ones) ? config.highlight_number_color : GColorLightGray);
+    graphics_context_set_text_color(ctx, (s_hour_ones_anim == NULL && i == current_hour_ones) ? config.highlight_number_color : config.number_color);
 
     GPoint pt = get_point_on_rounded_rect(rings[1].width, rings[1].height, rings[1].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", i);
@@ -315,7 +315,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[2].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
-    graphics_context_set_text_color(ctx, (s_min_tens_anim == NULL && i == current_minute_tens) ? config.highlight_number_color : GColorLightGray);
+    graphics_context_set_text_color(ctx, (s_min_tens_anim == NULL && i == current_minute_tens) ? config.highlight_number_color : config.number_color);
 
     GPoint pt = get_point_on_rounded_rect(rings[2].width, rings[2].height, rings[2].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", i);
@@ -328,7 +328,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[3].num_items;
     int32_t angle = target_angle + item_offset - base_angle;
 
-    graphics_context_set_text_color(ctx, (s_min_ones_anim == NULL && i == current_minute_ones) ? config.highlight_number_color : GColorLightGray);
+    graphics_context_set_text_color(ctx, (s_min_ones_anim == NULL && i == current_minute_ones) ? config.highlight_number_color : config.number_color);
 
     GPoint pt = get_point_on_rounded_rect(rings[3].width, rings[3].height, rings[3].corner_radius, angle);
     snprintf(buf, sizeof(buf), "%d", i);
