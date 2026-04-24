@@ -295,6 +295,7 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
     y = -h/2 + r - (cos_lookup(arc_angle) * r) / TRIG_MAX_RATIO;
     return GPoint(x, y);
   }
+  current_dist += q_arc;
 
   // Top-left straight → top center
   x = -w/2 + r + (target_dist - current_dist);
