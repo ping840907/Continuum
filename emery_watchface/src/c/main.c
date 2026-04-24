@@ -302,26 +302,6 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   return GPoint(x, y);
 }
 
-// FIX: shared helper replaces four nearly-identical ring drawing loops
-static void draw_ring_numbers(GContext *ctx, GPoint center, int ring_idx,
-                              int32_t ring_anim_angle, int current_digit,
-                              bool is_animating, int32_t target_angle) {
-  char buf[8];
-  int n = rings[ring_idx].num_items;
-  for (int i = 0; i < n; i++) {
-    int32_t item_offset = (i * TRIG_MAX_ANGLE) / n;
-    int32_t angle = target_angle + item_offset - ring_anim_angle;
-    bool is_current = (!is_animating && i == current_digit);
-    graphics_context_set_text_color(ctx, is_current ? config.highlight_number_color : config.number_color);
-    GPoint pt = get_point_on_rounded_rect(rings[ring_idx].width, rings[ring_idx].height,
-                                          rings[ring_idx].corner_radius, angle);
-    snprintf(buf, sizeof(buf), "%d", i);
-    graphics_draw_text(ctx, buf, s_number_font,
-      GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y,
-            NUMBER_TEXT_W, NUMBER_TEXT_H),
-      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  }
-}
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -358,10 +338,51 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_draw_rect(ctx, hl);
   }
 
-  draw_ring_numbers(ctx, center, 0, anim_hour_tens_angle, current_hour_tens, s_hour_tens_anim != NULL, target_angle);
-  draw_ring_numbers(ctx, center, 1, anim_hour_ones_angle, current_hour_ones, s_hour_ones_anim != NULL, target_angle);
-  draw_ring_numbers(ctx, center, 2, anim_min_tens_angle,  current_minute_tens, s_min_tens_anim != NULL, target_angle);
-  draw_ring_numbers(ctx, center, 3, anim_min_ones_angle,  current_minute_ones, s_min_ones_anim != NULL, target_angle);
+  char buf[8];
+
+  // Ring 0: Hour tens (0-2)
+  for (int i = 0; i < rings[0].num_items; i++) {
+    int32_t base_angle = anim_hour_tens_angle;
+    int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[0].num_items;
+    int32_t angle = target_angle + item_offset - base_angle;
+    graphics_context_set_text_color(ctx, (s_hour_tens_anim == NULL && i == current_hour_tens) ? config.highlight_number_color : config.number_color);
+    GPoint pt = get_point_on_rounded_rect(rings[0].width, rings[0].height, rings[0].corner_radius, angle);
+    snprintf(buf, sizeof(buf), "%d", i);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y, NUMBER_TEXT_W, NUMBER_TEXT_H), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
+
+  // Ring 1: Hour ones (0-9)
+  for (int i = 0; i < rings[1].num_items; i++) {
+    int32_t base_angle = anim_hour_ones_angle;
+    int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[1].num_items;
+    int32_t angle = target_angle + item_offset - base_angle;
+    graphics_context_set_text_color(ctx, (s_hour_ones_anim == NULL && i == current_hour_ones) ? config.highlight_number_color : config.number_color);
+    GPoint pt = get_point_on_rounded_rect(rings[1].width, rings[1].height, rings[1].corner_radius, angle);
+    snprintf(buf, sizeof(buf), "%d", i);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y, NUMBER_TEXT_W, NUMBER_TEXT_H), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
+
+  // Ring 2: Minute tens (0-5)
+  for (int i = 0; i < rings[2].num_items; i++) {
+    int32_t base_angle = anim_min_tens_angle;
+    int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[2].num_items;
+    int32_t angle = target_angle + item_offset - base_angle;
+    graphics_context_set_text_color(ctx, (s_min_tens_anim == NULL && i == current_minute_tens) ? config.highlight_number_color : config.number_color);
+    GPoint pt = get_point_on_rounded_rect(rings[2].width, rings[2].height, rings[2].corner_radius, angle);
+    snprintf(buf, sizeof(buf), "%d", i);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y, NUMBER_TEXT_W, NUMBER_TEXT_H), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
+
+  // Ring 3: Minute ones (0-9)
+  for (int i = 0; i < rings[3].num_items; i++) {
+    int32_t base_angle = anim_min_ones_angle;
+    int32_t item_offset = (i * TRIG_MAX_ANGLE) / rings[3].num_items;
+    int32_t angle = target_angle + item_offset - base_angle;
+    graphics_context_set_text_color(ctx, (s_min_ones_anim == NULL && i == current_minute_ones) ? config.highlight_number_color : config.number_color);
+    GPoint pt = get_point_on_rounded_rect(rings[3].width, rings[3].height, rings[3].corner_radius, angle);
+    snprintf(buf, sizeof(buf), "%d", i);
+    graphics_draw_text(ctx, buf, s_number_font, GRect(center.x + pt.x - NUMBER_TEXT_OFF_X, center.y + pt.y - NUMBER_TEXT_OFF_Y, NUMBER_TEXT_W, NUMBER_TEXT_H), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
 }
 
 static void update_time();
