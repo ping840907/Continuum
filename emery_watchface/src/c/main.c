@@ -66,12 +66,17 @@ typedef struct {
   int32_t from;
   int32_t to;
   int32_t *target_var;
+  AnimationUpdateImplementation update_func;
 } AnimCtx;
 
 static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
   void **ptr_tuple = (void **)context;
   PropertyAnimation **anim_ptr = (PropertyAnimation **)ptr_tuple[0];
   AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
+
+  if (finished && ctx->update_func) {
+    ctx->update_func(animation, ANIMATION_NORMALIZED_MAX);
+  }
 
   if (anim_ptr && *anim_ptr == (PropertyAnimation *)animation) {
     *anim_ptr = NULL;
@@ -137,6 +142,7 @@ static PropertyAnimation* create_anim(const AnimationImplementation *impl, int32
   ctx->from = from;
   ctx->to = to;
   ctx->target_var = target;
+  ctx->update_func = impl->update;
 
   Animation *anim = animation_create();
   if (!anim) {
