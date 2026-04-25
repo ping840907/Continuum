@@ -222,7 +222,7 @@ void init_default_config() {
   config.highlight_number_color = GColorWhite;
   config.highlight_position   = POS_RIGHT;
   config.animation_toggle     = true;
-  config.inertia_toggle       = false;
+  config.inertia_toggle       = true;
 }
 
 // FIX: persist config across app restarts
