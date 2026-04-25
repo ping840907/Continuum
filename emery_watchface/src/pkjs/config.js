@@ -126,8 +126,7 @@ module.exports = [
         "type": "toggle",
         "messageKey": "INERTIA_TOGGLE",
         "label": "Inertia Effect",
-        "defaultValue": false,
-        "description": "Ring overshoots then springs back. Requires animations enabled."
+        "defaultValue": false
       }
     ]
   },
