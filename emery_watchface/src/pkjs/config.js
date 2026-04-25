@@ -126,7 +126,7 @@ module.exports = [
         "type": "toggle",
         "messageKey": "INERTIA_TOGGLE",
         "label": "Inertia Effect",
-        "defaultValue": false
+        "defaultValue": true
       }
     ]
   },
