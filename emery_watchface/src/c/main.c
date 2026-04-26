@@ -7,7 +7,6 @@
 // Animation constants
 #define ANIM_DURATION_MS      500
 #define ANIM_DELAY_STEP_MS    150
-#define ANIM_DATE_DURATION_MS 400
 
 // Drawing constants
 #define HIGHLIGHT_BOX_SIZE    24
@@ -66,10 +65,6 @@ static PropertyAnimation *s_hour_ones_anim = NULL;
 static PropertyAnimation *s_min_tens_anim = NULL;
 static PropertyAnimation *s_min_ones_anim = NULL;
 
-static PropertyAnimation *s_month_anim = NULL;
-static PropertyAnimation *s_day_anim = NULL;
-static PropertyAnimation *s_weekday_anim = NULL;
-
 typedef struct {
   int32_t from;
   int32_t to;
@@ -95,11 +90,6 @@ static void anim_stopped_handler(Animation *animation, bool finished, void *cont
   animation_destroy(animation);
 }
 
-// FIX: use int32_t to match AnimCtx.target_var type and avoid UB write
-static int32_t anim_month_y = 24;
-static int32_t anim_day_y = 24;
-static int32_t anim_weekday_y = 24;
-
 static int32_t target_hour_tens_angle = 0;
 static int32_t target_hour_ones_angle = 0;
 static int32_t target_min_tens_angle = 0;
@@ -113,36 +103,7 @@ static void angle_anim_update(Animation *anim, const AnimationProgress progress)
   layer_mark_dirty(s_canvas_layer);
 }
 
-static void date_anim_update(Animation *anim, const AnimationProgress progress) {
-  void **ptr_tuple = (void **)animation_get_context(anim);
-  AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
-  int32_t current = ctx->from + ((ctx->to - ctx->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX;
-  *ctx->target_var = current;
-
-  Layer *window_layer = window_get_root_layer(s_main_window);
-  GRect bounds = layer_get_bounds(window_layer);
-  GPoint center = grect_center_point(&bounds);
-  int total_h = CENTER_ITEM_H * 4 + CENTER_SPACING * 3;
-  int start_y = center.y - total_h / 2;
-  int step    = CENTER_ITEM_H + CENTER_SPACING;
-
-  if (ctx->target_var == &anim_month_y) {
-    GRect frame = layer_get_frame(s_month_layer);
-    frame.origin.y = (int16_t)(start_y + current - 3);
-    layer_set_frame(s_month_layer, frame);
-  } else if (ctx->target_var == &anim_day_y) {
-    GRect frame = layer_get_frame(s_day_layer);
-    frame.origin.y = (int16_t)(start_y + step + current - 3);
-    layer_set_frame(s_day_layer, frame);
-  } else if (ctx->target_var == &anim_weekday_y) {
-    GRect frame = layer_get_frame(s_weekday_layer);
-    frame.origin.y = (int16_t)(start_y + 2 * step + current - 3);
-    layer_set_frame(s_weekday_layer, frame);
-  }
-}
-
 static const AnimationImplementation angle_anim_impl = { .update = angle_anim_update };
-static const AnimationImplementation date_anim_impl  = { .update = date_anim_update };
 
 // FIX: check all malloc return values to prevent crash on OOM
 static PropertyAnimation* create_anim(const AnimationImplementation *impl, int32_t from, int32_t to,
@@ -202,18 +163,6 @@ static void schedule_ring_anim(PropertyAnimation **anim_ptr, int32_t from, int32
   } else {
     animation_set_curve((Animation*)*anim_ptr, AnimationCurveEaseInOut);
   }
-  animation_schedule((Animation*)*anim_ptr);
-}
-
-// Helper: schedule a date slide-in animation with NULL-safety
-static void schedule_date_anim(PropertyAnimation **anim_ptr, int32_t *anim_var, uint32_t delay_ms) {
-  if (*anim_ptr) animation_unschedule((Animation*)*anim_ptr);
-  *anim_var = 24;
-  *anim_ptr = create_anim(&date_anim_impl, *anim_var, 3, anim_var, anim_ptr);
-  if (!*anim_ptr) return;
-  animation_set_duration((Animation*)*anim_ptr, ANIM_DATE_DURATION_MS);
-  if (delay_ms > 0) animation_set_delay((Animation*)*anim_ptr, delay_ms);
-  animation_set_curve((Animation*)*anim_ptr, AnimationCurveEaseOut);
   animation_schedule((Animation*)*anim_ptr);
 }
 
@@ -485,23 +434,17 @@ static void update_time(void) {
     schedule_ring_anim(&s_min_tens_anim,  anim_min_tens_angle,  target_min_tens_angle,  &anim_min_tens_angle,  ANIM_DELAY_STEP_MS * 2);
     schedule_ring_anim(&s_min_ones_anim,  anim_min_ones_angle,  target_min_ones_angle,  &anim_min_ones_angle,  ANIM_DELAY_STEP_MS * 3);
 
-    if (month_changed)   schedule_date_anim(&s_month_anim,   &anim_month_y,   0);
-    if (day_changed)     schedule_date_anim(&s_day_anim,     &anim_day_y,     200);
-    if (weekday_changed) schedule_date_anim(&s_weekday_anim, &anim_weekday_y, 400);
-
   } else {
-    anim_month_y   = 3;
-    anim_day_y     = 3;
-    anim_weekday_y = 3;
     anim_hour_tens_angle = target_hour_tens_angle;
     anim_hour_ones_angle = target_hour_ones_angle;
     anim_min_tens_angle  = target_min_tens_angle;
     anim_min_ones_angle  = target_min_ones_angle;
     layer_mark_dirty(s_canvas_layer);
-    layer_mark_dirty(s_month_layer);
-    layer_mark_dirty(s_day_layer);
-    layer_mark_dirty(s_weekday_layer);
   }
+
+  if (month_changed)   layer_mark_dirty(s_month_layer);
+  if (day_changed)     layer_mark_dirty(s_day_layer);
+  if (weekday_changed) layer_mark_dirty(s_weekday_layer);
 }
 
 static char s_day_buffer[4];
@@ -628,9 +571,6 @@ static void main_window_unload(Window *window) {
   if (s_hour_ones_anim) animation_unschedule((Animation*)s_hour_ones_anim);
   if (s_min_tens_anim)  animation_unschedule((Animation*)s_min_tens_anim);
   if (s_min_ones_anim)  animation_unschedule((Animation*)s_min_ones_anim);
-  if (s_month_anim)     animation_unschedule((Animation*)s_month_anim);
-  if (s_day_anim)       animation_unschedule((Animation*)s_day_anim);
-  if (s_weekday_anim)   animation_unschedule((Animation*)s_weekday_anim);
 
   layer_destroy(s_month_layer);
   layer_destroy(s_day_layer);
