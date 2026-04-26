@@ -16,6 +16,11 @@
 #define NUMBER_TEXT_OFF_X     15
 #define NUMBER_TEXT_OFF_Y     13
 
+// Center info panel layout
+#define CENTER_ITEM_W         50
+#define CENTER_ITEM_H         18
+#define CENTER_SPACING         2
+
 WatchConfig config;
 
 // 0: Innermost, 1: Sub-Inner, 2: Middle, 3: Outer
@@ -114,7 +119,9 @@ static void date_anim_update(Animation *anim, const AnimationProgress progress) 
   Layer *window_layer = window_get_root_layer(s_main_window);
   GRect bounds = layer_get_bounds(window_layer);
   GPoint center = grect_center_point(&bounds);
-  int start_y = center.y - 39;
+  int total_h = CENTER_ITEM_H * 4 + CENTER_SPACING * 3;
+  int start_y = center.y - total_h / 2;
+  int step    = CENTER_ITEM_H + CENTER_SPACING;
 
   if (ctx->target_var == &anim_month_y) {
     GRect frame = layer_get_frame(s_month_layer);
@@ -122,11 +129,11 @@ static void date_anim_update(Animation *anim, const AnimationProgress progress) 
     layer_set_frame(s_month_layer, frame);
   } else if (ctx->target_var == &anim_day_y) {
     GRect frame = layer_get_frame(s_day_layer);
-    frame.origin.y = (int16_t)(start_y + 20 + current - 3);
+    frame.origin.y = (int16_t)(start_y + step + current - 3);
     layer_set_frame(s_day_layer, frame);
   } else if (ctx->target_var == &anim_weekday_y) {
     GRect frame = layer_get_frame(s_weekday_layer);
-    frame.origin.y = (int16_t)(start_y + 40 + current - 3);
+    frame.origin.y = (int16_t)(start_y + 2 * step + current - 3);
     layer_set_frame(s_weekday_layer, frame);
   }
 }
@@ -390,7 +397,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   draw_ring_numbers(ctx, center, 3, anim_min_ones_angle,  current_minute_ones, s_min_ones_anim != NULL, target_angle);
 }
 
-static void update_time();
+static void update_time(void);
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   Tuple *t = dict_read_first(iterator);
@@ -419,7 +426,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   update_time();
 }
 
-static void update_time() {
+static void update_time(void) {
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
@@ -573,28 +580,26 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
 
-  int item_w = 50;
-  int item_h = 18;
-  int spacing = 2;
-  int total_height = item_h * 4 + spacing * 3;
+  int total_height = CENTER_ITEM_H * 4 + CENTER_SPACING * 3;
   int start_y = center.y - total_height / 2;
+  int step    = CENTER_ITEM_H + CENTER_SPACING;
 
-  s_month_layer = layer_create(GRect(center.x - item_w / 2, start_y, item_w, item_h));
+  s_month_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y, CENTER_ITEM_W, CENTER_ITEM_H));
   layer_set_clips(s_month_layer, true);
   layer_set_update_proc(s_month_layer, month_update_proc);
   layer_add_child(s_canvas_layer, s_month_layer);
 
-  s_day_layer = layer_create(GRect(center.x - item_w / 2, start_y + (item_h + spacing), item_w, item_h));
+  s_day_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y + step, CENTER_ITEM_W, CENTER_ITEM_H));
   layer_set_clips(s_day_layer, true);
   layer_set_update_proc(s_day_layer, day_update_proc);
   layer_add_child(s_canvas_layer, s_day_layer);
 
-  s_weekday_layer = layer_create(GRect(center.x - item_w / 2, start_y + 2 * (item_h + spacing), item_w, item_h));
+  s_weekday_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y + 2 * step, CENTER_ITEM_W, CENTER_ITEM_H));
   layer_set_clips(s_weekday_layer, true);
   layer_set_update_proc(s_weekday_layer, weekday_update_proc);
   layer_add_child(s_canvas_layer, s_weekday_layer);
 
-  s_battery_layer = layer_create(GRect(center.x - item_w / 2, start_y + 3 * (item_h + spacing), item_w, item_h));
+  s_battery_layer = layer_create(GRect(center.x - CENTER_ITEM_W / 2, start_y + 3 * step, CENTER_ITEM_W, CENTER_ITEM_H));
   layer_set_clips(s_battery_layer, true);
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);

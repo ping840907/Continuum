@@ -69,6 +69,12 @@ Pebble.addEventListener('webviewclosed', function (e) {
     }
   }
 
+  // THEME is a JS-only selector; the watch has no handler for it.
+  var themeKey = Pebble.Enums['THEME'];
+  if (themeKey !== undefined) {
+    delete dict[themeKey];
+  }
+
   Pebble.sendAppMessage(dict, function (e) {
     console.log('Sent config data to Pebble');
   }, function (e) {

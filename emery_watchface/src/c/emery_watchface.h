@@ -1,10 +1,6 @@
 #pragma once
 #include <pebble.h>
 
-// Screen Resolution for Emery
-#define EMERY_WIDTH 200
-#define EMERY_HEIGHT 228
-
 // Highlight Positions
 #define POS_TOP 0
 #define POS_BOTTOM 1
