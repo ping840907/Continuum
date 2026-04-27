@@ -13,7 +13,7 @@
 #define NUMBER_TEXT_W         21
 #define NUMBER_TEXT_H         21
 #define NUMBER_TEXT_OFF_X     10
-#define NUMBER_TEXT_OFF_Y     11
+#define NUMBER_TEXT_OFF_Y     10
 
 // Center info panel layout
 #define CENTER_ITEM_W         50
