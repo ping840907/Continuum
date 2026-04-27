@@ -6,9 +6,7 @@
     "pebble-app"
   ],
   "private": true,
-  "dependencies": {
-    "pebble-clay": "^1.0.4"
-  },
+  "dependencies": {},
   "pebble": {
     "displayName": "Continuum",
     "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
