@@ -30,10 +30,18 @@
 WatchConfig config;
 
 // 0: Innermost, 1: Sub-Inner, 2: Middle, 3: Outer
-// Chalk (180×180 round): perfectly circular rings — width==height, corner_radius==width/2
+// Gabbro (260×260 round): large circular rings — width==height, corner_radius==width/2
+// Chalk (180×180 round): smaller circular rings
 // Aplite/Diorite (144×168): proportionally scaled-down rounded-rect rings
 // Emery (200×228): original sizes
-#if defined(PBL_ROUND)
+#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+RingDef rings[4] = {
+  { .width = 80,  .height = 80,  .corner_radius = 40,  .num_items = 3 },
+  { .width = 134, .height = 134, .corner_radius = 67,  .num_items = 10 },
+  { .width = 188, .height = 188, .corner_radius = 94,  .num_items = 6 },
+  { .width = 242, .height = 242, .corner_radius = 121, .num_items = 10 }
+};
+#elif defined(PBL_ROUND)
 RingDef rings[4] = {
   { .width = 56,  .height = 56,  .corner_radius = 28, .num_items = 3 },
   { .width = 104, .height = 104, .corner_radius = 52, .num_items = 10 },

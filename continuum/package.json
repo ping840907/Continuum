@@ -12,13 +12,14 @@
   "pebble": {
     "displayName": "Continuum",
     "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
-    "sdkVersion": "3",
+    "sdkVersion": "4",
     "enableMultiJS": true,
     "targetPlatforms": [
       "aplite",
       "diorite",
       "chalk",
-      "emery"
+      "emery",
+      "gabbro"
     ],
     "watchapp": {
       "watchface": true
