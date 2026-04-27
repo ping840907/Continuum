@@ -205,8 +205,8 @@ GPoint get_point_on_rounded_rect(int w, int h, int r, int32_t angle) {
   // positions by 1 px on smaller rings (0 & 1) but not on larger ones (2 & 3),
   // producing a visible misalignment whenever the highlight sits at those angles.
   if (angle == 0)                        return GPoint(0,       -h/2);
-  if (angle == TRIG_MAX_ANGLE / 4)       return GPoint(w/2 - 1, 0);
-  if (angle == TRIG_MAX_ANGLE / 2)       return GPoint(0,       h/2 - 1);
+  if (angle == TRIG_MAX_ANGLE / 4)       return GPoint(w/2,     0);
+  if (angle == TRIG_MAX_ANGLE / 2)       return GPoint(0,       h/2);
   if (angle == 3 * TRIG_MAX_ANGLE / 4)  return GPoint(-w/2,    0);
 
   int str_h = w - 2*r;
