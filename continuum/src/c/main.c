@@ -11,28 +11,28 @@
 // Drawing constants — scaled per platform
 #if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
 // Gabbro (260×260): ~1.3× scale-up from the Emery/Chalk baseline
-#define HIGHLIGHT_BOX_SIZE    28
-#define NUMBER_TEXT_W         28
-#define NUMBER_TEXT_H         30
-#define NUMBER_TEXT_OFF_X     14
-#define NUMBER_TEXT_OFF_Y     15
-#define CENTER_ITEM_W         68
-#define CENTER_ITEM_H         24
-#define CENTER_SPACING         2
-#define BATTERY_ICON_W        34
-#define BATTERY_ICON_H        16
-#elif PBL_DISPLAY_WIDTH == 144
-// Aplite / Diorite (144×168): same absolute pixel sizes as Emery fit fine
 #define HIGHLIGHT_BOX_SIZE    21
 #define NUMBER_TEXT_W         21
 #define NUMBER_TEXT_H         21
 #define NUMBER_TEXT_OFF_X     10
 #define NUMBER_TEXT_OFF_Y     10
-#define CENTER_ITEM_W         40
+#define CENTER_ITEM_W         50
 #define CENTER_ITEM_H         18
 #define CENTER_SPACING         2
 #define BATTERY_ICON_W        26
 #define BATTERY_ICON_H        12
+#elif PBL_DISPLAY_WIDTH == 144
+// Aplite / Diorite (144×168): same absolute pixel sizes as Emery fit fine
+#define HIGHLIGHT_BOX_SIZE    15
+#define NUMBER_TEXT_W         15
+#define NUMBER_TEXT_H         15
+#define NUMBER_TEXT_OFF_X     8
+#define NUMBER_TEXT_OFF_Y     10
+#define CENTER_ITEM_W         36
+#define CENTER_ITEM_H         16
+#define CENTER_SPACING         0
+#define BATTERY_ICON_W        18
+#define BATTERY_ICON_H         8
 #else
 // Chalk (180×180) / Emery (200×228): original sizes
 #define HIGHLIGHT_BOX_SIZE    21
@@ -58,16 +58,16 @@ WatchConfig config;
 #if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
 // Gabbro: outer r=110 keeps number glyphs (28×30 px, off=14/15) inside 260 px screen
 RingDef rings[4] = {
-  { .width = 72,  .height = 72,  .corner_radius = 36,  .num_items = 3 },
-  { .width = 120, .height = 120, .corner_radius = 60,  .num_items = 10 },
-  { .width = 172, .height = 172, .corner_radius = 86,  .num_items = 6 },
-  { .width = 220, .height = 220, .corner_radius = 110, .num_items = 10 }
+  { .width = 120,  .height = 120,  .corner_radius = 36,  .num_items = 3 },
+  { .width = 160, .height = 160, .corner_radius = 60,  .num_items = 10 },
+  { .width = 200, .height = 200, .corner_radius = 86,  .num_items = 6 },
+  { .width = 240, .height = 240, .corner_radius = 110, .num_items = 10 }
 };
 #elif defined(PBL_ROUND)
 // Chalk: outer r=76 keeps number glyphs (21×21 px, off=10) inside 180 px screen
 RingDef rings[4] = {
-  { .width = 48,  .height = 48,  .corner_radius = 24, .num_items = 3 },
-  { .width = 92,  .height = 92,  .corner_radius = 46, .num_items = 10 },
+  { .width = 68,  .height = 68,  .corner_radius = 24, .num_items = 3 },
+  { .width = 96,  .height = 96,  .corner_radius = 46, .num_items = 10 },
   { .width = 124, .height = 124, .corner_radius = 62, .num_items = 6 },
   { .width = 152, .height = 152, .corner_radius = 76, .num_items = 10 }
 };
@@ -722,13 +722,12 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);
 
-#if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
-  // Gabbro: larger fonts for the bigger 260×260 display
-  s_number_font = fonts_get_system_font(FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM);
-  s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
-#else
+#if  PBL_DISPLAY_WIDTH >= 200
   s_number_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
   s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  #else
+  s_number_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 #endif
 
   battery_callback(battery_state_service_peek());
