@@ -56,18 +56,20 @@ WatchConfig config;
 // Aplite/Diorite (144×168): proportionally scaled-down rounded-rect rings
 // Emery (200×228): original sizes
 #if defined(PBL_ROUND) && PBL_DISPLAY_WIDTH == 260
+// Gabbro: outer r=110 keeps number glyphs (28×30 px, off=14/15) inside 260 px screen
 RingDef rings[4] = {
-  { .width = 80,  .height = 80,  .corner_radius = 40,  .num_items = 3 },
-  { .width = 134, .height = 134, .corner_radius = 67,  .num_items = 10 },
-  { .width = 188, .height = 188, .corner_radius = 94,  .num_items = 6 },
-  { .width = 242, .height = 242, .corner_radius = 121, .num_items = 10 }
+  { .width = 72,  .height = 72,  .corner_radius = 36,  .num_items = 3 },
+  { .width = 120, .height = 120, .corner_radius = 60,  .num_items = 10 },
+  { .width = 172, .height = 172, .corner_radius = 86,  .num_items = 6 },
+  { .width = 220, .height = 220, .corner_radius = 110, .num_items = 10 }
 };
 #elif defined(PBL_ROUND)
+// Chalk: outer r=76 keeps number glyphs (21×21 px, off=10) inside 180 px screen
 RingDef rings[4] = {
-  { .width = 56,  .height = 56,  .corner_radius = 28, .num_items = 3 },
-  { .width = 104, .height = 104, .corner_radius = 52, .num_items = 10 },
-  { .width = 140, .height = 140, .corner_radius = 70, .num_items = 6 },
-  { .width = 172, .height = 172, .corner_radius = 86, .num_items = 10 }
+  { .width = 48,  .height = 48,  .corner_radius = 24, .num_items = 3 },
+  { .width = 92,  .height = 92,  .corner_radius = 46, .num_items = 10 },
+  { .width = 124, .height = 124, .corner_radius = 62, .num_items = 6 },
+  { .width = 152, .height = 152, .corner_radius = 76, .num_items = 10 }
 };
 #elif PBL_DISPLAY_WIDTH == 144
 RingDef rings[4] = {
