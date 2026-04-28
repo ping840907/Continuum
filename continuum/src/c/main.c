@@ -27,7 +27,7 @@
 #define NUMBER_TEXT_W         15
 #define NUMBER_TEXT_H         15
 #define NUMBER_TEXT_OFF_X     7
-#define NUMBER_TEXT_OFF_Y     8
+#define NUMBER_TEXT_OFF_Y     10
 #define CENTER_ITEM_W         36
 #define CENTER_ITEM_H         16
 #define CENTER_SPACING         0
@@ -752,12 +752,16 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_battery_layer, battery_update_proc);
   layer_add_child(s_canvas_layer, s_battery_layer);
 
-#if  PBL_DISPLAY_WIDTH >= 200
+#if PBL_DISPLAY_WIDTH >= 200
   s_number_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
   s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-  #else
+#else
   s_number_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  #ifdef PBL_ROUND
+  s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  #else
   s_date_font   = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+  #endif
 #endif
 
   battery_callback(battery_state_service_peek());
