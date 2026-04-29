@@ -1,58 +1,61 @@
 {
-  "name": "continuum",
-  "author": "Sloth8497",
-  "version": "1.0.0",
-  "keywords": [
-    "pebble-app"
-  ],
-  "private": true,
-  "dependencies": {
-    "@rebble/clay": "1.0.8"
-  },
-  "pebble": {
-    "displayName": "Continuum",
-    "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
-    "sdkVersion": "3",
-    "enableMultiJS": true,
-    "targetPlatforms": [
-      "aplite",
-      "basalt",
-      "diorite",
-      "chalk",
-      "emery",
-      "flint",
-      "gabbro"
-    ],
-    "watchapp": {
-      "watchface": true
+    "author": "Sloth8497",
+    "dependencies": {
+        "@rebble/clay": "1.0.8"
     },
-    "messageKeys": [
-      "INNER_RING_COLOR",
-      "SUB_INNER_RING_COLOR",
-      "MIDDLE_RING_COLOR",
-      "OUTER_RING_COLOR",
-      "HIGHLIGHT_FILL_COLOR",
-      "LINE_COLOR",
-      "NUMBER_COLOR",
-      "CENTER_TEXT_COLOR",
-      "HIGHLIGHT_POSITION",
-      "ANIMATION_TOGGLE",
-      "INERTIA_TOGGLE",
-      "BATTERY_TOGGLE",
-      "THEME",
-      "HIGHLIGHT_NUMBER_COLOR",
-      "BACKGROUND_COLOR",
-      "INVERT_BW"
+    "keywords": [
+        "pebble-app"
     ],
-    "resources": {
-      "media": [
-        {
-          "type": "bitmap",
-          "name": "IMAGE_MENU_ICON",
-          "file": "images/icon.png",
-          "menuIcon": true
+    "name": "continuum",
+    "pebble": {
+        "capabilities": [
+            "configurable"
+        ],
+        "displayName": "Continuum",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "INNER_RING_COLOR",
+            "SUB_INNER_RING_COLOR",
+            "MIDDLE_RING_COLOR",
+            "OUTER_RING_COLOR",
+            "HIGHLIGHT_FILL_COLOR",
+            "LINE_COLOR",
+            "NUMBER_COLOR",
+            "CENTER_TEXT_COLOR",
+            "HIGHLIGHT_POSITION",
+            "ANIMATION_TOGGLE",
+            "INERTIA_TOGGLE",
+            "BATTERY_TOGGLE",
+            "THEME",
+            "HIGHLIGHT_NUMBER_COLOR",
+            "BACKGROUND_COLOR",
+            "INVERT_BW"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/icon.png",
+                    "menuIcon": true,
+                    "name": "IMAGE_MENU_ICON",
+                    "type": "bitmap"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk",
+            "diorite",
+            "emery",
+            "gabbro",
+            "flint"
+        ],
+        "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
+        "watchapp": {
+            "watchface": true
         }
-      ]
-    }
-  }
+    },
+    "version": "1.1.0"
 }
