@@ -4,6 +4,9 @@ var customClay = require('./custom-clay');
 var clay = new Clay(clayConfig, customClay, { autoHandleEvents: false });
 
 Pebble.addEventListener('showConfiguration', function (e) {
+  if (Pebble.getActiveWatchInfo) {
+    clay.meta.activeWatchInfo = Pebble.getActiveWatchInfo();
+  }
   Pebble.openURL(clay.generateUrl());
 });
 
