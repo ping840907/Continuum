@@ -1,6 +1,6 @@
 # Continuum
 
-A watch face for Pebble smartwatches (supports all models including OG, Steel, Time, Time Round, 2, Time 2 and Round 2). Time is displayed as four concentric rounded rectangles — each ring rotates to show one digit of the current hour and minute.
+A watch face for Pebble smartwatches (supports all models including OG, Steel, Time, Time Round, 2, 2 Duo, Time 2 and Round 2). Time is displayed as four concentric rounded rectangles — each ring rotates to show one digit of the current hour and minute.
 
 [Download on the Pebble App Store](https://apps.repebble.com/continuum_64924ceaf0c34b4fbda7a8f9)
 
