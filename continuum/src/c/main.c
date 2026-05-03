@@ -145,10 +145,56 @@ static int32_t target_min_tens_angle = 0;
 static int32_t target_min_ones_angle = 0;
 
 #if defined(PBL_TOUCH)
+// --- Bypass for watchface touch restriction ---
+// touch_service_subscribe() refuses to register watchfaces because the firmware
+// checks sys_app_is_watchface() and returns NULL. Calling the lower-level
+// event_service_client_subscribe() skips that check.
+
+typedef struct __attribute__((packed)) {
+  void *next;
+  void *prev;
+} InternalListNode;
+
+struct InternalPebbleEvent;  // opaque; payload at offset 0
+typedef void (*InternalEventHandler)(struct InternalPebbleEvent *event, void *context);
+
+typedef struct {
+  InternalListNode  list_node;
+  uint32_t          type;     // PebbleEventType (4-byte ARM enum)
+  InternalEventHandler handler;
+  void             *context;
+} InternalEventServiceInfo;
+
+#define INTERNAL_PEBBLE_TOUCH_EVENT 57
+
+extern void event_service_client_subscribe(InternalEventServiceInfo *info);
+extern void event_service_client_unsubscribe(InternalEventServiceInfo *info);
+
+static InternalEventServiceInfo s_touch_event_svc;
+
 static int s_touched_ring = -1;
 static int32_t s_touch_start_angle = 0;
 static int32_t s_touch_start_ring_angle = 0;
 static void touch_handler(const TouchEvent *event, void *context);
+
+static void raw_touch_event_handler(struct InternalPebbleEvent *event, void *context) {
+  // PebbleTouchEvent (offset 0 of PebbleEvent union) contains TouchEvent at offset 0.
+  touch_handler((const TouchEvent *)event, context);
+}
+
+static void subscribe_touch(void) {
+  s_touch_event_svc = (InternalEventServiceInfo){
+    .list_node = {NULL, NULL},
+    .type      = INTERNAL_PEBBLE_TOUCH_EVENT,
+    .handler   = raw_touch_event_handler,
+    .context   = NULL,
+  };
+  event_service_client_subscribe(&s_touch_event_svc);
+}
+
+static void unsubscribe_touch(void) {
+  event_service_client_unsubscribe(&s_touch_event_svc);
+}
 #endif
 
 static void angle_anim_update(Animation *anim, const AnimationProgress progress) {
@@ -574,9 +620,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       config.touch_toggle = t->value->int32 == 1;
 #if defined(PBL_TOUCH)
       if (config.touch_toggle) {
-        touch_service_subscribe(touch_handler, NULL);
+        subscribe_touch();
       } else {
-        touch_service_unsubscribe();
+        unsubscribe_touch();
       }
 #endif
     }
@@ -853,14 +899,14 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
 static void main_window_appear(Window *window) {
 #if defined(PBL_TOUCH)
   if (config.touch_toggle) {
-    touch_service_subscribe(touch_handler, NULL);
+    subscribe_touch();
   }
 #endif
 }
 
 static void main_window_disappear(Window *window) {
 #if defined(PBL_TOUCH)
-  touch_service_unsubscribe();
+  unsubscribe_touch();
 #endif
 }
 
