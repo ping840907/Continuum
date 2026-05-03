@@ -573,7 +573,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_TOUCH_TOGGLE) {
       config.touch_toggle = t->value->int32 == 1;
 #if defined(PBL_TOUCH)
-      if (config.touch_toggle && touch_service_is_enabled()) {
+      if (config.touch_toggle) {
         touch_service_subscribe(touch_handler, NULL);
       } else {
         touch_service_unsubscribe();
@@ -852,7 +852,7 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
 
 static void main_window_appear(Window *window) {
 #if defined(PBL_TOUCH)
-  if (config.touch_toggle && touch_service_is_enabled()) {
+  if (config.touch_toggle) {
     touch_service_subscribe(touch_handler, NULL);
   }
 #endif
