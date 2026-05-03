@@ -157,8 +157,7 @@ module.exports = [
         "messageKey": "TOUCH_TOGGLE",
         "label": "Enable Touch Interaction",
         "defaultValue": true,
-        "description": "Allows dragging the rings with the touchscreen.",
-        "capabilities": ["EMERY", "GABBRO"]
+        "description": "Allows dragging the rings with the touchscreen."
       }
     ]
   },
