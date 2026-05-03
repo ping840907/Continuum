@@ -148,6 +148,7 @@ static int32_t target_min_ones_angle = 0;
 static int s_touched_ring = -1;
 static int32_t s_touch_start_angle = 0;
 static int32_t s_touch_start_ring_angle = 0;
+static void touch_handler(const TouchEvent *event, void *context);
 #endif
 
 static void angle_anim_update(Animation *anim, const AnimationProgress progress) {
