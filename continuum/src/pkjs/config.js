@@ -151,6 +151,14 @@ module.exports = [
         "defaultValue": false,
         "description": "Aplite/Diorite only: swap to white background with black text and borders.",
         "capabilities": ["BW"]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "TOUCH_TOGGLE",
+        "label": "Enable Touch Interaction",
+        "defaultValue": true,
+        "description": "Allows dragging the rings with the touchscreen.",
+        "capabilities": ["EMERY", "GABBRO"]
       }
     ]
   },

@@ -144,6 +144,12 @@ static int32_t target_hour_ones_angle = 0;
 static int32_t target_min_tens_angle = 0;
 static int32_t target_min_ones_angle = 0;
 
+#if defined(PBL_TOUCH)
+static int s_touched_ring = -1;
+static int32_t s_touch_start_angle = 0;
+static int32_t s_touch_start_ring_angle = 0;
+#endif
+
 static void angle_anim_update(Animation *anim, const AnimationProgress progress) {
   void **ptr_tuple = (void **)animation_get_context(anim);
   AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
@@ -224,6 +230,7 @@ void init_default_config() {
   config.inertia_toggle       = true;
   config.battery_toggle       = true;
   config.invert_bw            = false;
+  config.touch_toggle         = true;
 
 #ifdef PBL_COLOR
   config.inner_ring_color       = GColorBlack;
@@ -387,6 +394,12 @@ static void draw_ring_numbers(GContext *ctx, GPoint center, int ring_idx,
                               bool is_animating, int32_t target_angle) {
   char buf[8];
   int n = rings[ring_idx].num_items;
+#if defined(PBL_TOUCH)
+  if (s_touched_ring == ring_idx) {
+    is_animating = true;
+  }
+#endif
+
   for (int i = 0; i < n; i++) {
     int32_t item_offset = (i * TRIG_MAX_ANGLE) / n;
     int32_t angle = target_angle + item_offset - ring_anim_angle;
@@ -556,6 +569,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_INERTIA_TOGGLE)       config.inertia_toggle       = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_BATTERY_TOGGLE)       config.battery_toggle       = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_INVERT_BW)            config.invert_bw            = t->value->int32 == 1;
+    else if (t->key == MESSAGE_KEY_TOUCH_TOGGLE)         config.touch_toggle         = t->value->int32 == 1;
     t = dict_read_next(iterator);
   }
 
@@ -619,16 +633,30 @@ static void update_time(void) {
     if (target_hour_ones_angle < anim_hour_ones_angle) target_hour_ones_angle += TRIG_MAX_ANGLE;
     if (target_hour_tens_angle < anim_hour_tens_angle) target_hour_tens_angle += TRIG_MAX_ANGLE;
 
+#if defined(PBL_TOUCH)
+    if (s_touched_ring != 0) schedule_ring_anim(&s_hour_tens_anim, anim_hour_tens_angle, target_hour_tens_angle, &anim_hour_tens_angle, 0);
+    if (s_touched_ring != 1) schedule_ring_anim(&s_hour_ones_anim, anim_hour_ones_angle, target_hour_ones_angle, &anim_hour_ones_angle, ANIM_DELAY_STEP_MS);
+    if (s_touched_ring != 2) schedule_ring_anim(&s_min_tens_anim,  anim_min_tens_angle,  target_min_tens_angle,  &anim_min_tens_angle,  ANIM_DELAY_STEP_MS * 2);
+    if (s_touched_ring != 3) schedule_ring_anim(&s_min_ones_anim,  anim_min_ones_angle,  target_min_ones_angle,  &anim_min_ones_angle,  ANIM_DELAY_STEP_MS * 3);
+#else
     schedule_ring_anim(&s_hour_tens_anim, anim_hour_tens_angle, target_hour_tens_angle, &anim_hour_tens_angle, 0);
     schedule_ring_anim(&s_hour_ones_anim, anim_hour_ones_angle, target_hour_ones_angle, &anim_hour_ones_angle, ANIM_DELAY_STEP_MS);
     schedule_ring_anim(&s_min_tens_anim,  anim_min_tens_angle,  target_min_tens_angle,  &anim_min_tens_angle,  ANIM_DELAY_STEP_MS * 2);
     schedule_ring_anim(&s_min_ones_anim,  anim_min_ones_angle,  target_min_ones_angle,  &anim_min_ones_angle,  ANIM_DELAY_STEP_MS * 3);
+#endif
 
   } else {
+#if defined(PBL_TOUCH)
+    if (s_touched_ring != 0) anim_hour_tens_angle = target_hour_tens_angle;
+    if (s_touched_ring != 1) anim_hour_ones_angle = target_hour_ones_angle;
+    if (s_touched_ring != 2) anim_min_tens_angle  = target_min_tens_angle;
+    if (s_touched_ring != 3) anim_min_ones_angle  = target_min_ones_angle;
+#else
     anim_hour_tens_angle = target_hour_tens_angle;
     anim_hour_ones_angle = target_hour_ones_angle;
     anim_min_tens_angle  = target_min_tens_angle;
     anim_min_ones_angle  = target_min_ones_angle;
+#endif
     layer_mark_dirty(s_canvas_layer);
   }
 
@@ -649,6 +677,94 @@ static void battery_callback(BatteryChargeState state) {
   battery_is_charging = state.is_charging;
   layer_mark_dirty(s_battery_layer);
 }
+
+#if defined(PBL_TOUCH)
+// Helper to map touch coordinates to a ring
+static int get_touched_ring(GPoint center, GPoint touch) {
+  int dx = touch.x - center.x;
+  int dy = touch.y - center.y;
+
+  // For touch selection, use an approximate radius based on width/2.
+  // The logic starts from the outer ring inwards.
+  // Distances can be optimized with squares.
+  int32_t d2 = dx * dx + dy * dy;
+
+  for (int i = 3; i >= 0; i--) {
+    int32_t r = rings[i].width / 2;
+    // Add a bit of touch slop, especially for outer rings
+    int32_t r_slop = r + 10;
+    if (d2 <= r_slop * r_slop) {
+      // It's inside the outer bound of this ring.
+      // If it's the innermost (i==0) or it's outside the inner ring, return it.
+      if (i == 0) {
+         return 0; // Center text layer blocks center touches? But we'll allow innermost ring anyway.
+      } else {
+         int32_t inner_r = rings[i-1].width / 2;
+         if (d2 >= (inner_r - 10) * (inner_r - 10)) {
+           return i;
+         }
+      }
+    }
+  }
+  return -1;
+}
+
+static void touch_handler(const TouchEvent *event, void *context) {
+  Layer *window_layer = window_get_root_layer(s_main_window);
+  GRect bounds = layer_get_bounds(window_layer);
+  GPoint center = grect_center_point(&bounds);
+
+  int32_t touch_angle = atan2_lookup(event->y - center.y, event->x - center.x);
+  // atan2_lookup returns angle with 0 at right, clockwise to TRIG_MAX_ANGLE.
+  // Our ring angle is 0 at top, clockwise.
+  // To convert: atan2_lookup result - TRIG_MAX_ANGLE/4
+  // However, atan2_lookup is only available in Pebble SDK 4.0+. We can use atan2_lookup.
+  // Actually pebble SDK atan2_lookup returns 0 at top? No, atan2_lookup(y, x)
+  // Let's use atan2_lookup(dy, dx) + TRIG_MAX_ANGLE/4 to align with top=0.
+  // Wait, Pebble's atan2_lookup takes (y, x).
+  // Standard atan2(y, x): 0 is +x axis.
+  // We want 0 at +y axis (top is -y).
+  // So we pass (x, -y) to atan2_lookup.
+  touch_angle = atan2_lookup(event->x - center.x, center.y - event->y);
+
+  if (event->type == TouchEvent_Touchdown) {
+    s_touched_ring = get_touched_ring(center, GPoint(event->x, event->y));
+    if (s_touched_ring != -1) {
+      s_touch_start_angle = touch_angle;
+
+      // Cancel animation for this ring
+      if (s_touched_ring == 0 && s_hour_tens_anim) { animation_unschedule((Animation*)s_hour_tens_anim); }
+      if (s_touched_ring == 1 && s_hour_ones_anim) { animation_unschedule((Animation*)s_hour_ones_anim); }
+      if (s_touched_ring == 2 && s_min_tens_anim)  { animation_unschedule((Animation*)s_min_tens_anim); }
+      if (s_touched_ring == 3 && s_min_ones_anim)  { animation_unschedule((Animation*)s_min_ones_anim); }
+
+      if (s_touched_ring == 0) s_touch_start_ring_angle = anim_hour_tens_angle;
+      if (s_touched_ring == 1) s_touch_start_ring_angle = anim_hour_ones_angle;
+      if (s_touched_ring == 2) s_touch_start_ring_angle = anim_min_tens_angle;
+      if (s_touched_ring == 3) s_touch_start_ring_angle = anim_min_ones_angle;
+
+      layer_mark_dirty(s_canvas_layer);
+    }
+  } else if (event->type == TouchEvent_PositionUpdate && s_touched_ring != -1) {
+    int32_t diff = touch_angle - s_touch_start_angle;
+    int32_t new_angle = (s_touch_start_ring_angle + diff) % TRIG_MAX_ANGLE;
+    if (new_angle < 0) new_angle += TRIG_MAX_ANGLE;
+
+    if (s_touched_ring == 0) anim_hour_tens_angle = new_angle;
+    if (s_touched_ring == 1) anim_hour_ones_angle = new_angle;
+    if (s_touched_ring == 2) anim_min_tens_angle  = new_angle;
+    if (s_touched_ring == 3) anim_min_ones_angle  = new_angle;
+
+    layer_mark_dirty(s_canvas_layer);
+  } else if (event->type == TouchEvent_Liftoff && s_touched_ring != -1) {
+    s_touched_ring = -1; // clear BEFORE scheduling animation so it acts normal
+
+    // Need to trigger an animation back to the target angle.
+    // Call update_time() to calculate target angles and schedule animations
+    update_time();
+  }
+}
+#endif
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   current_month = tick_time->tm_mon + 1;
@@ -726,6 +842,20 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
 #endif
   graphics_context_set_fill_color(ctx, fill_color);
   graphics_fill_rect(ctx, GRect(2, 2, fill_w, BATTERY_ICON_H - 4), 0, GCornerNone);
+}
+
+static void main_window_appear(Window *window) {
+#if defined(PBL_TOUCH)
+  if (config.touch_toggle && touch_service_is_enabled()) {
+    touch_service_subscribe(touch_handler, NULL);
+  }
+#endif
+}
+
+static void main_window_disappear(Window *window) {
+#if defined(PBL_TOUCH)
+  touch_service_unsubscribe();
+#endif
 }
 
 static void main_window_load(Window *window) {
@@ -815,6 +945,8 @@ static void init() {
 
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load   = main_window_load,
+    .appear = main_window_appear,
+    .disappear = main_window_disappear,
     .unload = main_window_unload
   });
 

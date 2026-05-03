@@ -24,6 +24,7 @@ typedef struct {
   bool inertia_toggle;
   bool battery_toggle;
   bool invert_bw;  // B&W platforms: swap black/white scheme
+  bool touch_toggle; // Allow touching/dragging rings
 } WatchConfig;
 
 extern WatchConfig config;
