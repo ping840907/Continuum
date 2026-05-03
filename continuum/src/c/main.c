@@ -569,7 +569,16 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_INERTIA_TOGGLE)       config.inertia_toggle       = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_BATTERY_TOGGLE)       config.battery_toggle       = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_INVERT_BW)            config.invert_bw            = t->value->int32 == 1;
-    else if (t->key == MESSAGE_KEY_TOUCH_TOGGLE)         config.touch_toggle         = t->value->int32 == 1;
+    else if (t->key == MESSAGE_KEY_TOUCH_TOGGLE) {
+      config.touch_toggle = t->value->int32 == 1;
+#if defined(PBL_TOUCH)
+      if (config.touch_toggle && touch_service_is_enabled()) {
+        touch_service_subscribe(touch_handler, NULL);
+      } else {
+        touch_service_unsubscribe();
+      }
+#endif
+    }
     t = dict_read_next(iterator);
   }
 
@@ -684,25 +693,21 @@ static int get_touched_ring(GPoint center, GPoint touch) {
   int dx = touch.x - center.x;
   int dy = touch.y - center.y;
 
-  // For touch selection, use an approximate radius based on width/2.
-  // The logic starts from the outer ring inwards.
-  // Distances can be optimized with squares.
-  int32_t d2 = dx * dx + dy * dy;
-
+  // Use elliptical hit testing based on each ring's width and height.
+  // On round screens (Gabbro) width==height so this reduces to circular detection.
+  // On rectangular screens (Emery) height > width, covering the taller ring area.
+  // Ellipse equation scaled to integers: dx²·hh² + dy²·hw² <= hw²·hh²
   for (int i = 3; i >= 0; i--) {
-    int32_t r = rings[i].width / 2;
-    // Add a bit of touch slop, especially for outer rings
-    int32_t r_slop = r + 10;
-    if (d2 <= r_slop * r_slop) {
-      // It's inside the outer bound of this ring.
-      // If it's the innermost (i==0) or it's outside the inner ring, return it.
-      if (i == 0) {
-         return 0; // Center text layer blocks center touches? But we'll allow innermost ring anyway.
-      } else {
-         int32_t inner_r = rings[i-1].width / 2;
-         if (d2 >= (inner_r - 10) * (inner_r - 10)) {
-           return i;
-         }
+    int32_t hw = rings[i].width  / 2 + 10;
+    int32_t hh = rings[i].height / 2 + 10;
+    if ((int32_t)dx*dx * hh*hh + (int32_t)dy*dy * hw*hw <= hw*hw * hh*hh) {
+      if (i == 0) return 0;
+      int32_t iw = rings[i-1].width  / 2 - 10;
+      int32_t ih = rings[i-1].height / 2 - 10;
+      if (iw < 1) iw = 1;
+      if (ih < 1) ih = 1;
+      if ((int32_t)dx*dx * ih*ih + (int32_t)dy*dy * iw*iw >= iw*iw * ih*ih) {
+        return i;
       }
     }
   }
