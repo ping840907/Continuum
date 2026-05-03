@@ -55,7 +55,7 @@
         ],
         "uuid": "fc60ee24-f1ff-4902-bbfb-50f8d0b9f12f",
         "watchapp": {
-            "watchface": true
+            "watchface": false
         }
     },
     "version": "1.2.0"

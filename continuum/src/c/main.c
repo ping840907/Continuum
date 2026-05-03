@@ -948,6 +948,7 @@ static void init() {
 
   s_main_window = window_create();
   window_set_background_color(s_main_window, GColorBlack);
+  window_set_fullscreen(s_main_window, true);
 
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load   = main_window_load,
