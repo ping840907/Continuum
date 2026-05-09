@@ -88,6 +88,7 @@ static Layer *s_month_layer;
 static Layer *s_day_layer;
 static Layer *s_weekday_layer;
 static Layer *s_battery_layer;
+static char s_day_buffer[4];
 
 static const char *const MONTH_NAMES[] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -517,10 +518,16 @@ static void reposition_center_layers(void) {
   if (config.battery_toggle) {
     f = layer_get_frame(s_battery_layer);
     if (battery_horizontal) {
+      char buf[16];
+      snprintf(buf, sizeof(buf), "%s %d", MONTH_NAMES[(current_month - 1) % 12], current_day);
+      GSize text_size = graphics_text_layout_get_content_size(buf, s_date_font, GRect(0, 0, bounds.size.w, CENTER_ITEM_H), GTextOverflowModeWordWrap, GTextAlignmentCenter);
+
       f.size.w = BATTERY_ICON_H;
       f.size.h = BATTERY_ICON_W;
-      f.origin.y = start_y + step + (CENTER_ITEM_H - f.size.h) / 2;
-      f.origin.x = center.x + CENTER_MONTHDAY_W / 2 + 2;
+
+      // Center battery body vertically with text, adjusting for 3px top nub
+      f.origin.y = start_y + step + (CENTER_ITEM_H - (f.size.h - 3)) / 2 - 3;
+      f.origin.x = center.x + text_size.w / 2 + 4;
     } else {
       f.size.w = BATTERY_ICON_W;
       f.size.h = BATTERY_ICON_H;
@@ -545,10 +552,13 @@ static void reposition_center_layers(void) {
   if (config.battery_toggle) {
     f = layer_get_frame(s_battery_layer);
     if (battery_horizontal) {
+      GSize text_size = graphics_text_layout_get_content_size(s_day_buffer, s_date_font, GRect(0, 0, bounds.size.w, CENTER_ITEM_H), GTextOverflowModeWordWrap, GTextAlignmentCenter);
+
       f.size.w = BATTERY_ICON_H;
       f.size.h = BATTERY_ICON_W;
-      f.origin.y = start_y + 2 * step + (CENTER_ITEM_H - f.size.h) / 2;
-      f.origin.x = center.x + CENTER_ITEM_W / 2 + 2;
+      // Center battery body vertically with text, adjusting for 3px top nub
+      f.origin.y = start_y + 2 * step + (CENTER_ITEM_H - (f.size.h - 3)) / 2 - 3;
+      f.origin.x = center.x + text_size.w / 2 + 4;
     } else {
       f.size.w = BATTERY_ICON_W;
       f.size.h = BATTERY_ICON_H;
@@ -667,7 +677,6 @@ static void update_time(void) {
   if (weekday_changed) layer_mark_dirty(s_weekday_layer);
 }
 
-static char s_day_buffer[4];
 static bool battery_is_charging = false;
 
 static void battery_callback(BatteryChargeState state) {
@@ -681,6 +690,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   if (current_day != tick_time->tm_mday) {
     current_day = tick_time->tm_mday;
     snprintf(s_day_buffer, sizeof(s_day_buffer), "%d", current_day);
+    reposition_center_layers();
   }
   current_weekday = tick_time->tm_wday;
   update_time();
