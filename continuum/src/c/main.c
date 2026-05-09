@@ -521,8 +521,8 @@ static void ring_update_proc(Layer *layer, GContext *ctx) {
   int ring_idx = *(int*)layer_get_data(layer);
   GRect bounds = layer_get_bounds(layer);
   GPoint center = grect_center_point(&bounds);
-
   int32_t target_angle = 0;
+  
   if      (config.highlight_position == POS_RIGHT)  target_angle = TRIG_MAX_ANGLE / 4;
   else if (config.highlight_position == POS_BOTTOM) target_angle = TRIG_MAX_ANGLE / 2;
   else if (config.highlight_position == POS_LEFT)   target_angle = 3 * TRIG_MAX_ANGLE / 4;
@@ -530,12 +530,29 @@ static void ring_update_proc(Layer *layer, GContext *ctx) {
   int32_t anim_angle   = 0;
   int     cur_digit    = 0;
   bool    is_animating = false;
-
+  
   switch (ring_idx) {
-    case 0: anim_angle = anim_hour_tens_angle; cur_digit = current_hour_tens; is_animating = (s_hour_tens_anim != NULL); break;
-    case 1: anim_angle = anim_hour_ones_angle; cur_digit = current_hour_ones; is_animating = (s_hour_ones_anim != NULL); break;
-    case 2: anim_angle = anim_min_tens_angle;  cur_digit = current_minute_tens; is_animating = (s_min_tens_anim != NULL);  break;
-    case 3: anim_angle = anim_min_ones_angle;  cur_digit = current_minute_ones; is_animating = (s_min_ones_anim != NULL);  break;
+    case 0: 
+      anim_angle = anim_hour_tens_angle; 
+      cur_digit = current_hour_tens; 
+      // 同時檢查動畫是否正在執行，或者是否有動畫正在排隊等待 (Delay)
+      is_animating = (s_hour_tens_anim != NULL) || (s_delay_timers[0] != NULL); 
+      break;
+    case 1: 
+      anim_angle = anim_hour_ones_angle; 
+      cur_digit = current_hour_ones; 
+      is_animating = (s_hour_ones_anim != NULL) || (s_delay_timers[1] != NULL); 
+      break;
+    case 2: 
+      anim_angle = anim_min_tens_angle; 
+      cur_digit = current_minute_tens; 
+      is_animating = (s_min_tens_anim != NULL)  || (s_delay_timers[2] != NULL);  
+      break;
+    case 3: 
+      anim_angle = anim_min_ones_angle;  
+      cur_digit = current_minute_ones; 
+      is_animating = (s_min_ones_anim != NULL)  || (s_delay_timers[3] != NULL);  
+      break;
   }
 
   draw_ring_numbers(ctx, center, ring_idx, anim_angle, cur_digit, is_animating, target_angle);
