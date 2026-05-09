@@ -7,8 +7,7 @@
 // Animation constants
 #define ANIM_DURATION_MS      500
 #define ANIM_DELAY_STEP_MS    150
-#define ANIM_RENDER_FPS       30
-#define ANIM_FRAME_INTERVAL_MS (1000 / ANIM_RENDER_FPS)
+#define DEFAULT_ANIM_FPS      30
 
 static const char *const DIGIT_STRINGS[] = {
   "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
@@ -130,6 +129,7 @@ typedef struct {
   int32_t to;
   int32_t *target_var;
   Layer   *target_layer;
+  uint32_t last_frame_time;
 } AnimCtx;
 
 static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
@@ -164,6 +164,18 @@ static int32_t target_min_ones_angle = 0;
 static void angle_anim_update(Animation *anim, const AnimationProgress progress) {
   void **ptr_tuple = (void **)animation_get_context(anim);
   AnimCtx *ctx = (AnimCtx *)ptr_tuple[1];
+
+  time_t t;
+  uint16_t ms;
+  time_ms(&t, &ms);
+  uint32_t now = (uint32_t)t * 1000 + ms;
+
+  uint32_t interval = 1000 / config.anim_fps;
+  if (progress < ANIMATION_NORMALIZED_MAX && now - ctx->last_frame_time < interval) {
+    return;
+  }
+  ctx->last_frame_time = now;
+
   int32_t current = ctx->from + (int32_t)(
     ((int64_t)(ctx->to - ctx->from) * (int32_t)progress) / ANIMATION_NORMALIZED_MAX);
   *ctx->target_var = current;
@@ -181,6 +193,7 @@ static PropertyAnimation* create_anim(int32_t from, int32_t to,
   ctx->to   = to;
   ctx->target_var   = target;
   ctx->target_layer = target_layer;
+  ctx->last_frame_time = 0;
 
   Animation *anim = animation_create();
   if (!anim) { free(ctx); return NULL; }
@@ -278,6 +291,7 @@ static GFont s_date_font;
 
 void init_default_config() {
   config.highlight_position   = POS_RIGHT;
+  config.anim_fps             = DEFAULT_ANIM_FPS;
   config.animation_toggle     = true;
   config.inertia_toggle       = true;
   config.battery_toggle       = true;
@@ -583,6 +597,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     else if (t->key == MESSAGE_KEY_HIGHLIGHT_NUMBER_COLOR) config.highlight_number_color = GColorFromHEX(t->value->int32);
     else if (t->key == MESSAGE_KEY_BACKGROUND_COLOR)       config.background_color       = GColorFromHEX(t->value->int32);
     else if (t->key == MESSAGE_KEY_HIGHLIGHT_POSITION)     config.highlight_position     = atoi(t->value->cstring);
+    else if (t->key == MESSAGE_KEY_ANIM_FPS)               config.anim_fps               = t->value->int32;
     else if (t->key == MESSAGE_KEY_ANIMATION_TOGGLE)       config.animation_toggle       = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_INERTIA_TOGGLE)         config.inertia_toggle         = t->value->int32 == 1;
     else if (t->key == MESSAGE_KEY_BATTERY_TOGGLE)         config.battery_toggle         = t->value->int32 == 1;
