@@ -535,7 +535,6 @@ static void ring_update_proc(Layer *layer, GContext *ctx) {
     case 0: 
       anim_angle = anim_hour_tens_angle; 
       cur_digit = current_hour_tens; 
-      // 同時檢查動畫是否正在執行，或者是否有動畫正在排隊等待 (Delay)
       is_animating = (s_hour_tens_anim != NULL) || (s_delay_timers[0] != NULL); 
       break;
     case 1: 
