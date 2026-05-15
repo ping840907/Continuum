@@ -23,37 +23,40 @@ Pebble.addEventListener('webviewclosed', function (e) {
   if (theme > 0) {
     var themes = {
       1: { // Ocean Blue
-        'INNER_RING_COLOR': '0x000055',
-        'SUB_INNER_RING_COLOR': '0x000080',
-        'MIDDLE_RING_COLOR': '0x0000AA',
-        'OUTER_RING_COLOR': '0x0000FF',
-        'HIGHLIGHT_FILL_COLOR': '0x00FFFF',
-        'LINE_COLOR': '0xFFFFFF',
-        'NUMBER_COLOR': '0xFFFFFF',
-        'CENTER_TEXT_COLOR': '0xFFFFFF',
-        'HIGHLIGHT_NUMBER_COLOR': '0x00FFFF'
+        'INNER_RING_COLOR': '0x0000AA',
+        'SUB_INNER_RING_COLOR': '0x000055',
+        'MIDDLE_RING_COLOR': '0x000055',
+        'OUTER_RING_COLOR': '0x000055',
+        'HIGHLIGHT_FILL_COLOR': '0x0055FF',
+        'LINE_COLOR': '0x0000AA',
+        'NUMBER_COLOR': '0x0055FF',
+        'CENTER_TEXT_COLOR': '0x00FFFF',
+        'HIGHLIGHT_NUMBER_COLOR': '0x00FFFF',
+        'BACKGROUND_COLOR': '0x000055'
       },
       2: { // Forest Green
-        'INNER_RING_COLOR': '0x005500',
-        'SUB_INNER_RING_COLOR': '0x007700',
-        'MIDDLE_RING_COLOR': '0x00AA00',
-        'OUTER_RING_COLOR': '0x55FF00',
-        'HIGHLIGHT_FILL_COLOR': '0xFFFF00',
-        'LINE_COLOR': '0xFFFFFF',
-        'NUMBER_COLOR': '0xFFFFFF',
-        'CENTER_TEXT_COLOR': '0xFFFFFF',
-        'HIGHLIGHT_NUMBER_COLOR': '0xFFFF00'
+        'INNER_RING_COLOR': '0x555500',
+        'SUB_INNER_RING_COLOR': '0xAAAA55',
+        'MIDDLE_RING_COLOR': '0xAAAA55',
+        'OUTER_RING_COLOR': '0xAAAA55',
+        'HIGHLIGHT_FILL_COLOR': '0xAA5500',
+        'LINE_COLOR': '0x555500',
+        'NUMBER_COLOR': '0x005500',
+        'CENTER_TEXT_COLOR': '0x55AA55',
+        'HIGHLIGHT_NUMBER_COLOR': '0x55AA55',
+        'BACKGROUND_COLOR': '0xAAAA55'
       },
       3: { // Cyberpunk
-        'INNER_RING_COLOR': '0x000000',
-        'SUB_INNER_RING_COLOR': '0x2B0055',
-        'MIDDLE_RING_COLOR': '0x550055',
-        'OUTER_RING_COLOR': '0xAA00AA',
-        'HIGHLIGHT_FILL_COLOR': '0xFF00FF',
-        'LINE_COLOR': '0xFFFF00',
-        'NUMBER_COLOR': '0xFFFF00',
-        'CENTER_TEXT_COLOR': '0xFFFF00',
-        'HIGHLIGHT_NUMBER_COLOR': '0xFF00FF'
+        'INNER_RING_COLOR': '0xFF55FF',
+        'SUB_INNER_RING_COLOR': '0xAAFF00',
+        'MIDDLE_RING_COLOR': '0xFF55FF',
+        'OUTER_RING_COLOR': '0x000055',
+        'HIGHLIGHT_FILL_COLOR': '0x0000AA',
+        'LINE_COLOR': '0x000000',
+        'NUMBER_COLOR': '0x0055AA',
+        'CENTER_TEXT_COLOR': '0xAAFF00',
+        'HIGHLIGHT_NUMBER_COLOR': '0xFF55FF',
+        'BACKGROUND_COLOR': '0x000055'
       }
     };
 
